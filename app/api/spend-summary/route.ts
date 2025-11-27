@@ -12,31 +12,36 @@ interface AccountSummary {
   transactionCount: number;
 }
 
+interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  isShared: boolean;
+}
+
 interface SpendSummaryResponse {
   startDate: string;
   endDate: string;
   period: Period;
   sharedOnly: boolean;
+  accountId: string | null;
   totalAmount: number;
   accounts: AccountSummary[];
+  transactions?: Transaction[];
 }
 
 function getDateRange(period: Period): { startDate: Date; endDate: Date } {
   const now = new Date();
 
   if (period === 'last_30_days') {
-    // endDate = tomorrow at 00:00
     const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    // startDate = endDate - 30 days
     const startDate = new Date(endDate);
     startDate.setDate(startDate.getDate() - 30);
     return { startDate, endDate };
   }
 
-  // Default: current_month
-  // startDate = first day of this calendar month at 00:00
   const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-  // endDate = first day of next month at 00:00 (exclusive)
   const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   return { startDate, endDate };
 }
@@ -57,6 +62,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const periodParam = searchParams.get('period');
   const sharedOnlyParam = searchParams.get('sharedOnly');
+  const accountIdParam = searchParams.get('accountId');
 
   // Validate period
   const validPeriods: Period[] = ['current_month', 'last_30_days'];
@@ -67,16 +73,21 @@ export async function GET(request: Request) {
   // Parse sharedOnly (default to false)
   const sharedOnly = sharedOnlyParam === 'true';
 
+  // Parse accountId (optional - for drilling into specific account)
+  const accountId = accountIdParam || null;
+
   // Get date range
   const { startDate, endDate } = getDateRange(period);
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
 
-  // Query transactions with account join
-  const { data: transactions, error: queryError } = await supabase
+  // Build query - include merchant_name and date for transaction details
+  let query = supabase
     .from('transactions')
     .select(`
       id,
+      date,
+      merchant_name,
       amount,
       is_shared,
       account_id,
@@ -90,7 +101,15 @@ export async function GET(request: Request) {
     `)
     .eq('user_id', user.id)
     .gte('date', startDateStr)
-    .lt('date', endDateStr);
+    .lt('date', endDateStr)
+    .order('date', { ascending: false });
+
+  // Filter by specific account if requested
+  if (accountId) {
+    query = query.eq('account_id', accountId);
+  }
+
+  const { data: transactions, error: queryError } = await query;
 
   if (queryError) {
     return NextResponse.json({ error: queryError.message }, { status: 500 });
@@ -102,8 +121,10 @@ export async function GET(request: Request) {
       endDate: endDate.toISOString(),
       period,
       sharedOnly,
+      accountId,
       totalAmount: 0,
       accounts: [],
+      transactions: [],
     } satisfies SpendSummaryResponse);
   }
 
@@ -116,13 +137,25 @@ export async function GET(request: Request) {
     is_shared_source: boolean;
   };
 
+  // Type for transaction from DB
+  type TransactionRow = {
+    id: string;
+    date: string;
+    merchant_name: string;
+    amount: number;
+    is_shared: boolean;
+    account_id: string;
+    accounts: AccountData;
+  };
+
+  const typedTransactions = transactions as unknown as TransactionRow[];
+
   // Filter for shared transactions if sharedOnly is true
   const filteredTransactions = sharedOnly
-    ? transactions.filter((tx) => {
-        const account = tx.accounts as unknown as AccountData;
-        return account.is_shared_source === true || tx.is_shared === true;
+    ? typedTransactions.filter((tx) => {
+        return tx.accounts.is_shared_source === true || tx.is_shared === true;
       })
-    : transactions;
+    : typedTransactions;
 
   // Group by account_id in TypeScript
   const accountMap = new Map<
@@ -138,12 +171,12 @@ export async function GET(request: Request) {
   >();
 
   for (const tx of filteredTransactions) {
-    const account = tx.accounts as unknown as AccountData;
-    const accountId = tx.account_id;
+    const account = tx.accounts;
+    const txAccountId = tx.account_id;
 
-    if (!accountMap.has(accountId)) {
-      accountMap.set(accountId, {
-        accountId,
+    if (!accountMap.has(txAccountId)) {
+      accountMap.set(txAccountId, {
+        accountId: txAccountId,
         accountName: account.name,
         type: account.type,
         subtype: account.subtype,
@@ -152,7 +185,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const summary = accountMap.get(accountId)!;
+    const summary = accountMap.get(txAccountId)!;
     summary.totalAmount += Number(tx.amount);
     summary.transactionCount += 1;
   }
@@ -166,13 +199,26 @@ export async function GET(request: Request) {
     acc.totalAmount = Math.round(acc.totalAmount * 100) / 100;
   }
 
+  // Build transaction list if filtering by account
+  const transactionList: Transaction[] | undefined = accountId
+    ? filteredTransactions.map((tx) => ({
+        id: tx.id,
+        date: tx.date,
+        description: tx.merchant_name,
+        amount: Math.round(Number(tx.amount) * 100) / 100,
+        isShared: tx.is_shared,
+      }))
+    : undefined;
+
   const response: SpendSummaryResponse = {
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
     period,
     sharedOnly,
+    accountId,
     totalAmount: Math.round(totalAmount * 100) / 100,
     accounts,
+    transactions: transactionList,
   };
 
   return NextResponse.json(response);
