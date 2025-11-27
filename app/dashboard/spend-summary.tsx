@@ -34,6 +34,35 @@ interface SpendSummaryData {
   categories: string[];
 }
 
+interface CategoryRollup {
+  category: string;
+  totalAmount: number;
+  transactionCount: number;
+}
+
+function computeCategoryRollups(accounts: AccountSummary[]): CategoryRollup[] {
+  const categoryMap = new Map<string, { totalAmount: number; transactionCount: number }>();
+
+  for (const account of accounts) {
+    for (const tx of account.transactions) {
+      const category = tx.normalizedCategory || 'Uncategorized';
+      const existing = categoryMap.get(category) || { totalAmount: 0, transactionCount: 0 };
+      categoryMap.set(category, {
+        totalAmount: existing.totalAmount + tx.amount,
+        transactionCount: existing.transactionCount + 1,
+      });
+    }
+  }
+
+  return Array.from(categoryMap.entries())
+    .map(([category, data]) => ({
+      category,
+      totalAmount: Math.round(data.totalAmount * 100) / 100,
+      transactionCount: data.transactionCount,
+    }))
+    .sort((a, b) => b.totalAmount - a.totalAmount);
+}
+
 export default function SpendSummary() {
   const [period, setPeriod] = useState<Period>('current_month');
   const [sharedOnly, setSharedOnly] = useState(false);
@@ -259,6 +288,40 @@ export default function SpendSummary() {
               {data.accounts.reduce((sum, acc) => sum + acc.transactionCount, 0)} transactions
               {` across ${data.accounts.length} account${data.accounts.length !== 1 ? 's' : ''}`}
             </p>
+
+            {/* Category Rollup */}
+            {(() => {
+              const categoryRollups = computeCategoryRollups(data.accounts);
+              if (categoryRollups.length === 0) return null;
+
+              return (
+                <div className="mt-4 max-h-32 overflow-y-auto border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                  <div className="space-y-1.5">
+                    {categoryRollups.map((rollup) => (
+                      <div
+                        key={rollup.category}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            data-testid="category-name"
+                            className="font-medium text-zinc-700 dark:text-zinc-300"
+                          >
+                            {rollup.category}
+                          </span>
+                          <span className="text-zinc-400 dark:text-zinc-500">
+                            {rollup.transactionCount} transaction{rollup.transactionCount !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                          {formatCurrency(rollup.totalAmount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Account Accordion */}

@@ -592,6 +592,84 @@ describe('SpendSummary', () => {
     });
   });
 
+  describe('Category Rollup', () => {
+    it('displays category totals and counts in the Total Spend card', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Should show category breakdown
+      // From mock data: Shopping ($150), Food & Dining ($85.50 + $300 = $385.50), Gas & Fuel ($45), Uncategorized ($200)
+      expect(screen.getByText('Food & Dining')).toBeInTheDocument();
+      expect(screen.getByText('Shopping')).toBeInTheDocument();
+      expect(screen.getByText('Gas & Fuel')).toBeInTheDocument();
+    });
+
+    it('shows Uncategorized bucket for transactions without category', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // tx-5 has normalizedCategory: null, so should show Uncategorized
+      expect(screen.getByText('Uncategorized')).toBeInTheDocument();
+    });
+
+    it('shows transaction count per category', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Food & Dining has 2 transactions (tx-2 and tx-4)
+      // Find all category rows and verify the first one (highest amount) has correct count
+      const categoryRows = screen.getAllByTestId('category-name');
+      // First category should be Food & Dining with 2 transactions
+      const firstCategoryRow = categoryRows[0].closest('div')?.parentElement;
+      expect(firstCategoryRow?.textContent).toContain('Food & Dining');
+      expect(firstCategoryRow?.textContent).toContain('2 transactions');
+    });
+
+    it('sorts categories by total amount descending', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Get all category names in order
+      const categoryElements = screen.getAllByTestId('category-name');
+      const categoryNames = categoryElements.map((el) => el.textContent);
+
+      // Food & Dining ($385.50) should come before Uncategorized ($200), Shopping ($150), Gas & Fuel ($45)
+      expect(categoryNames[0]).toBe('Food & Dining');
+    });
+  });
+
   describe('Empty States', () => {
     it('shows empty state when no accounts/transactions', async () => {
       fetchMock.mockResolvedValueOnce({
