@@ -67,6 +67,7 @@ export default function SpendSummary() {
   const [period, setPeriod] = useState<Period>('current_month');
   const [sharedOnly, setSharedOnly] = useState(false);
   const [expandedAccountIds, setExpandedAccountIds] = useState<Set<string>>(new Set());
+  const [categoryRollupExpanded, setCategoryRollupExpanded] = useState(false);
   const [data, setData] = useState<SpendSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -295,30 +296,58 @@ export default function SpendSummary() {
               if (categoryRollups.length === 0) return null;
 
               return (
-                <div className="mt-4 max-h-32 overflow-y-auto border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                  <div className="space-y-1.5">
-                    {categoryRollups.map((rollup) => (
-                      <div
-                        key={rollup.category}
-                        className="flex items-center justify-between text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            data-testid="category-name"
-                            className="font-medium text-zinc-700 dark:text-zinc-300"
-                          >
-                            {rollup.category}
-                          </span>
-                          <span className="text-zinc-400 dark:text-zinc-500">
-                            {rollup.transactionCount} transaction{rollup.transactionCount !== 1 ? 's' : ''}
+                <div className="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setCategoryRollupExpanded(!categoryRollupExpanded)}
+                    aria-expanded={categoryRollupExpanded}
+                    className="flex w-full items-center justify-between text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                  >
+                    <span className="font-medium">
+                      {categoryRollups.length} categor{categoryRollups.length !== 1 ? 'ies' : 'y'}
+                    </span>
+                    <svg
+                      className={`h-4 w-4 transition-transform ${
+                        categoryRollupExpanded ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {categoryRollupExpanded && (
+                    <div className="mt-2 max-h-32 space-y-1.5 overflow-y-auto">
+                      {categoryRollups.map((rollup) => (
+                        <div
+                          key={rollup.category}
+                          className="flex items-center justify-between text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              data-testid="category-name"
+                              className="font-medium text-zinc-700 dark:text-zinc-300"
+                            >
+                              {rollup.category}
+                            </span>
+                            <span className="text-zinc-400 dark:text-zinc-500">
+                              {rollup.transactionCount} transaction{rollup.transactionCount !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                            {formatCurrency(rollup.totalAmount)}
                           </span>
                         </div>
-                        <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                          {formatCurrency(rollup.totalAmount)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })()}

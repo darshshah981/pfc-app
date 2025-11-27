@@ -593,7 +593,7 @@ describe('SpendSummary', () => {
   });
 
   describe('Category Rollup', () => {
-    it('displays category totals and counts in the Total Spend card', async () => {
+    it('shows collapsible category section with count', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockSummaryData),
@@ -605,8 +605,29 @@ describe('SpendSummary', () => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
 
+      // Should show collapsed category toggle with count
+      const categoryToggle = screen.getByRole('button', { name: /categories/i });
+      expect(categoryToggle).toBeInTheDocument();
+      expect(categoryToggle).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('displays category totals and counts when expanded', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Expand category rollup
+      const categoryToggle = screen.getByRole('button', { name: /categories/i });
+      fireEvent.click(categoryToggle);
+
       // Should show category breakdown
-      // From mock data: Shopping ($150), Food & Dining ($85.50 + $300 = $385.50), Gas & Fuel ($45), Uncategorized ($200)
       expect(screen.getByText('Food & Dining')).toBeInTheDocument();
       expect(screen.getByText('Shopping')).toBeInTheDocument();
       expect(screen.getByText('Gas & Fuel')).toBeInTheDocument();
@@ -624,6 +645,10 @@ describe('SpendSummary', () => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
 
+      // Expand category rollup
+      const categoryToggle = screen.getByRole('button', { name: /categories/i });
+      fireEvent.click(categoryToggle);
+
       // tx-5 has normalizedCategory: null, so should show Uncategorized
       expect(screen.getByText('Uncategorized')).toBeInTheDocument();
     });
@@ -639,6 +664,10 @@ describe('SpendSummary', () => {
       await waitFor(() => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
+
+      // Expand category rollup
+      const categoryToggle = screen.getByRole('button', { name: /categories/i });
+      fireEvent.click(categoryToggle);
 
       // Food & Dining has 2 transactions (tx-2 and tx-4)
       // Find all category rows and verify the first one (highest amount) has correct count
@@ -661,12 +690,39 @@ describe('SpendSummary', () => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
 
+      // Expand category rollup
+      const categoryToggle = screen.getByRole('button', { name: /categories/i });
+      fireEvent.click(categoryToggle);
+
       // Get all category names in order
       const categoryElements = screen.getAllByTestId('category-name');
       const categoryNames = categoryElements.map((el) => el.textContent);
 
       // Food & Dining ($385.50) should come before Uncategorized ($200), Shopping ($150), Gas & Fuel ($45)
       expect(categoryNames[0]).toBe('Food & Dining');
+    });
+
+    it('collapses category list when toggle clicked again', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Expand category rollup
+      const categoryToggle = screen.getByRole('button', { name: /categories/i });
+      fireEvent.click(categoryToggle);
+      expect(screen.getByText('Food & Dining')).toBeInTheDocument();
+
+      // Collapse
+      fireEvent.click(categoryToggle);
+      expect(categoryToggle).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.queryByText('Food & Dining')).not.toBeInTheDocument();
     });
   });
 
