@@ -150,6 +150,42 @@ function getDateDaysAgo(daysAgo: number): string {
  * Run the mock import for a user.
  * This is idempotent - calling it multiple times won't create duplicates.
  */
+/**
+ * Update all transactions from shared source accounts to have is_shared = true.
+ * This ensures that transactions from shared accounts are properly marked.
+ */
+export async function syncSharedSourceTransactions(userId: string): Promise<number> {
+  const supabase = await createClient();
+
+  // Get all accounts that are shared sources
+  const { data: sharedAccounts, error: accountError } = await supabase
+    .from('accounts')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_shared_source', true);
+
+  if (accountError || !sharedAccounts || sharedAccounts.length === 0) {
+    return 0;
+  }
+
+  const sharedAccountIds = sharedAccounts.map((a) => a.id);
+
+  // Update all transactions from these accounts to is_shared = true
+  const { data, error: updateError } = await supabase
+    .from('transactions')
+    .update({ is_shared: true })
+    .eq('user_id', userId)
+    .in('account_id', sharedAccountIds)
+    .eq('is_shared', false)
+    .select('id');
+
+  if (updateError) {
+    throw new Error(`Failed to sync shared source transactions: ${updateError.message}`);
+  }
+
+  return data?.length ?? 0;
+}
+
 export async function runMockImport(userId: string): Promise<MockImportResult> {
   const supabase = await createClient();
 
@@ -219,10 +255,11 @@ export async function runMockImport(userId: string): Promise<MockImportResult> {
       }
 
       // Determine if this transaction should be marked as shared
-      // Transactions from the shared account are implicitly shared via the account
-      // For personal account, randomly mark some as shared
-      const isFromSharedAccount = providerAccountId === 'mock-shared-card';
-      const isShared = !isFromSharedAccount && seededRandom(tx.provider_transaction_id + '-shared') < 0.3;
+      // Transactions from a shared source account default to shared
+      // For personal accounts, randomly mark some as shared (30%)
+      const mockAccount = MOCK_ACCOUNTS.find(a => a.provider_account_id === providerAccountId);
+      const isFromSharedAccount = mockAccount?.is_shared_source ?? false;
+      const isShared = isFromSharedAccount || seededRandom(tx.provider_transaction_id + '-shared') < 0.3;
 
       // Create the transaction
       const { error } = await supabase.from('transactions').insert({

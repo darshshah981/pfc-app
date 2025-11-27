@@ -3,21 +3,24 @@ import { createClient } from '@/lib/supabase/server';
 
 type Period = 'current_month' | 'last_30_days';
 
-interface AccountSummary {
-  accountId: string;
-  accountName: string;
-  type: string | null;
-  subtype: string | null;
-  totalAmount: number;
-  transactionCount: number;
-}
-
 interface Transaction {
   id: string;
   date: string;
   description: string;
   amount: number;
+  normalizedCategory: string | null;
   isShared: boolean;
+}
+
+interface AccountSummary {
+  accountId: string;
+  accountName: string;
+  type: string | null;
+  subtype: string | null;
+  isSharedSource: boolean;
+  totalAmount: number;
+  transactionCount: number;
+  transactions: Transaction[];
 }
 
 interface SpendSummaryResponse {
@@ -25,10 +28,9 @@ interface SpendSummaryResponse {
   endDate: string;
   period: Period;
   sharedOnly: boolean;
-  accountId: string | null;
   totalAmount: number;
   accounts: AccountSummary[];
-  transactions?: Transaction[];
+  categories: string[];
 }
 
 function getDateRange(period: Period): { startDate: Date; endDate: Date } {
@@ -62,9 +64,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const periodParam = searchParams.get('period');
   const sharedOnlyParam = searchParams.get('sharedOnly');
-  const accountIdParam = searchParams.get('accountId');
 
-  // Validate period
+  // Validate period (default to current_month)
   const validPeriods: Period[] = ['current_month', 'last_30_days'];
   const period: Period = validPeriods.includes(periodParam as Period)
     ? (periodParam as Period)
@@ -73,22 +74,20 @@ export async function GET(request: Request) {
   // Parse sharedOnly (default to false)
   const sharedOnly = sharedOnlyParam === 'true';
 
-  // Parse accountId (optional - for drilling into specific account)
-  const accountId = accountIdParam || null;
-
   // Get date range
   const { startDate, endDate } = getDateRange(period);
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
 
-  // Build query - include merchant_name and date for transaction details
-  let query = supabase
+  // Query transactions with account join - include normalized_category
+  const { data: transactions, error: queryError } = await supabase
     .from('transactions')
     .select(`
       id,
       date,
       merchant_name,
       amount,
+      normalized_category,
       is_shared,
       account_id,
       accounts!inner (
@@ -104,27 +103,19 @@ export async function GET(request: Request) {
     .lt('date', endDateStr)
     .order('date', { ascending: false });
 
-  // Filter by specific account if requested
-  if (accountId) {
-    query = query.eq('account_id', accountId);
-  }
-
-  const { data: transactions, error: queryError } = await query;
-
   if (queryError) {
     return NextResponse.json({ error: queryError.message }, { status: 500 });
   }
 
-  if (!transactions) {
+  if (!transactions || transactions.length === 0) {
     return NextResponse.json({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       period,
       sharedOnly,
-      accountId,
       totalAmount: 0,
       accounts: [],
-      transactions: [],
+      categories: [],
     } satisfies SpendSummaryResponse);
   }
 
@@ -143,6 +134,7 @@ export async function GET(request: Request) {
     date: string;
     merchant_name: string;
     amount: number;
+    normalized_category: string | null;
     is_shared: boolean;
     account_id: string;
     accounts: AccountData;
@@ -157,7 +149,16 @@ export async function GET(request: Request) {
       })
     : typedTransactions;
 
-  // Group by account_id in TypeScript
+  // Collect unique categories for dropdown
+  const categorySet = new Set<string>();
+  for (const tx of filteredTransactions) {
+    if (tx.normalized_category) {
+      categorySet.add(tx.normalized_category);
+    }
+  }
+  const categories = Array.from(categorySet).sort();
+
+  // Group by account_id with transactions
   const accountMap = new Map<
     string,
     {
@@ -165,8 +166,10 @@ export async function GET(request: Request) {
       accountName: string;
       type: string | null;
       subtype: string | null;
+      isSharedSource: boolean;
       totalAmount: number;
       transactionCount: number;
+      transactions: Transaction[];
     }
   >();
 
@@ -180,14 +183,24 @@ export async function GET(request: Request) {
         accountName: account.name,
         type: account.type,
         subtype: account.subtype,
+        isSharedSource: account.is_shared_source,
         totalAmount: 0,
         transactionCount: 0,
+        transactions: [],
       });
     }
 
     const summary = accountMap.get(txAccountId)!;
     summary.totalAmount += Number(tx.amount);
     summary.transactionCount += 1;
+    summary.transactions.push({
+      id: tx.id,
+      date: tx.date,
+      description: tx.merchant_name,
+      amount: Math.round(Number(tx.amount) * 100) / 100,
+      normalizedCategory: tx.normalized_category,
+      isShared: tx.is_shared,
+    });
   }
 
   // Convert to array and calculate total
@@ -199,26 +212,14 @@ export async function GET(request: Request) {
     acc.totalAmount = Math.round(acc.totalAmount * 100) / 100;
   }
 
-  // Build transaction list if filtering by account
-  const transactionList: Transaction[] | undefined = accountId
-    ? filteredTransactions.map((tx) => ({
-        id: tx.id,
-        date: tx.date,
-        description: tx.merchant_name,
-        amount: Math.round(Number(tx.amount) * 100) / 100,
-        isShared: tx.is_shared,
-      }))
-    : undefined;
-
   const response: SpendSummaryResponse = {
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
     period,
     sharedOnly,
-    accountId,
     totalAmount: Math.round(totalAmount * 100) / 100,
     accounts,
-    transactions: transactionList,
+    categories,
   };
 
   return NextResponse.json(response);

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { runMockImport } from '@/lib/mockImport';
+import { runMockImport, syncSharedSourceTransactions } from '@/lib/mockImport';
 
 export async function POST() {
   const supabase = await createClient();
@@ -16,7 +16,14 @@ export async function POST() {
 
   try {
     const result = await runMockImport(user.id);
-    return NextResponse.json(result);
+
+    // Sync existing transactions from shared source accounts
+    const transactionsSynced = await syncSharedSourceTransactions(user.id);
+
+    return NextResponse.json({
+      ...result,
+      transactionsSynced,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to import mock data';
     return NextResponse.json({ error: message }, { status: 500 });

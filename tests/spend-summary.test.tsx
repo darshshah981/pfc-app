@@ -2,60 +2,76 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import SpendSummary from '@/app/dashboard/spend-summary';
 
-// Mock data
+// Mock data matching the new API response structure
 const mockSummaryData = {
   startDate: '2024-11-01T00:00:00.000Z',
   endDate: '2024-12-01T00:00:00.000Z',
   period: 'current_month',
   sharedOnly: false,
-  accountId: null,
-  totalAmount: 1500.00,
+  totalAmount: 1500.0,
+  categories: ['Food & Dining', 'Shopping', 'Gas & Fuel'],
   accounts: [
     {
       accountId: 'acc-1',
       accountName: 'Personal Checking',
       type: 'depository',
       subtype: 'checking',
-      totalAmount: 1000.00,
-      transactionCount: 5,
+      isSharedSource: false,
+      totalAmount: 1000.0,
+      transactionCount: 3,
+      transactions: [
+        {
+          id: 'tx-1',
+          date: '2024-11-15',
+          description: 'Amazon',
+          amount: 150.0,
+          normalizedCategory: 'Shopping',
+          isShared: false,
+        },
+        {
+          id: 'tx-2',
+          date: '2024-11-14',
+          description: 'Grocery Store',
+          amount: 85.5,
+          normalizedCategory: 'Food & Dining',
+          isShared: true,
+        },
+        {
+          id: 'tx-3',
+          date: '2024-11-10',
+          description: 'Gas Station',
+          amount: 45.0,
+          normalizedCategory: 'Gas & Fuel',
+          isShared: false,
+        },
+      ],
     },
     {
       accountId: 'acc-2',
       accountName: 'Shared Credit Card',
       type: 'credit',
       subtype: 'credit card',
-      totalAmount: 500.00,
-      transactionCount: 3,
-    },
-  ],
-};
-
-const mockTransactionsData = {
-  ...mockSummaryData,
-  accountId: 'acc-1',
-  totalAmount: 1000.00,
-  accounts: [mockSummaryData.accounts[0]],
-  transactions: [
-    {
-      id: 'tx-1',
-      date: '2024-11-15',
-      description: 'Amazon',
-      amount: 150.00,
-      isShared: false,
-    },
-    {
-      id: 'tx-2',
-      date: '2024-11-14',
-      description: 'Grocery Store',
-      amount: 85.50,
-      isShared: true,
-    },
-    {
-      id: 'tx-3',
-      date: '2024-11-10',
-      description: 'Gas Station',
-      amount: 45.00,
-      isShared: false,
+      isSharedSource: true,
+      totalAmount: 500.0,
+      transactionCount: 2,
+      transactions: [
+        {
+          id: 'tx-4',
+          date: '2024-11-16',
+          description: 'Restaurant',
+          amount: 300.0,
+          normalizedCategory: 'Food & Dining',
+          isShared: true,
+        },
+        {
+          id: 'tx-5',
+          date: '2024-11-12',
+          description: 'Utilities',
+          amount: 200.0,
+          normalizedCategory: null,
+          isShared: true,
+        },
+      ],
     },
   ],
 };
@@ -63,7 +79,7 @@ const mockTransactionsData = {
 const mockSharedOnlyData = {
   ...mockSummaryData,
   sharedOnly: true,
-  totalAmount: 500.00,
+  totalAmount: 500.0,
   accounts: [mockSummaryData.accounts[1]],
 };
 
@@ -76,9 +92,8 @@ beforeEach(() => {
 });
 
 describe('SpendSummary', () => {
-  describe('Account Selection', () => {
-    it('renders account list and allows clicking to view transactions', async () => {
-      // First render shows summary
+  describe('Default Filter State', () => {
+    it('loads with current_month period and sharedOnly=false by default', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockSummaryData),
@@ -86,7 +101,34 @@ describe('SpendSummary', () => {
 
       render(<SpendSummary />);
 
-      // Wait for data to load
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          expect.stringContaining('period=current_month')
+        );
+        expect(fetchMock).toHaveBeenCalledWith(
+          expect.stringContaining('sharedOnly=false')
+        );
+      });
+
+      // Verify the period dropdown shows "Current Month"
+      const periodSelect = screen.getByRole('combobox');
+      expect(periodSelect).toHaveValue('current_month');
+
+      // Verify shared toggle is off
+      const sharedToggle = screen.getByRole('switch', { name: /shared/i });
+      expect(sharedToggle).toHaveAttribute('aria-checked', 'false');
+    });
+  });
+
+  describe('Account Accordion', () => {
+    it('renders account list with expand/collapse functionality', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
       await waitFor(() => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
@@ -94,30 +136,41 @@ describe('SpendSummary', () => {
       // Both accounts should be visible
       expect(screen.getByText('Shared Credit Card')).toBeInTheDocument();
 
-      // Mock the transaction fetch
+      // Transactions should not be visible initially
+      expect(screen.queryByText('Amazon')).not.toBeInTheDocument();
+      expect(screen.queryByText('Restaurant')).not.toBeInTheDocument();
+    });
+
+    it('expands account to show transactions when clicked', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockTransactionsData),
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
 
       // Click on Personal Checking account
-      const accountButton = screen.getByRole('button', { name: /Personal Checking/i });
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
+      });
+      expect(accountButton).toHaveAttribute('aria-expanded', 'false');
+
       fireEvent.click(accountButton);
 
-      // Wait for transactions to load
-      await waitFor(() => {
-        expect(screen.getByText('Amazon')).toBeInTheDocument();
-      });
+      // Account should now be expanded
+      expect(accountButton).toHaveAttribute('aria-expanded', 'true');
 
-      // Verify transactions are displayed
+      // Transactions should be visible
+      expect(screen.getByText('Amazon')).toBeInTheDocument();
       expect(screen.getByText('Grocery Store')).toBeInTheDocument();
       expect(screen.getByText('Gas Station')).toBeInTheDocument();
-
-      // Verify shared badge is shown for shared transaction
-      expect(screen.getByText('Shared')).toBeInTheDocument();
     });
 
-    it('shows active state for selected account', async () => {
+    it('collapses expanded account when clicked again', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockSummaryData),
@@ -129,23 +182,21 @@ describe('SpendSummary', () => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
 
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockTransactionsData),
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
       });
 
-      // Click account
-      const accountButton = screen.getByRole('button', { name: /Personal Checking/i });
+      // Expand
       fireEvent.click(accountButton);
+      expect(screen.getByText('Amazon')).toBeInTheDocument();
 
-      // After clicking, the UI shows "Viewing transactions for:" header with account name
-      await waitFor(() => {
-        expect(screen.getByText('Viewing transactions for:')).toBeInTheDocument();
-        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
-      });
+      // Collapse
+      fireEvent.click(accountButton);
+      expect(accountButton).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.queryByText('Amazon')).not.toBeInTheDocument();
     });
 
-    it('allows clearing selection to go back to summary view', async () => {
+    it('allows multiple accounts to be expanded simultaneously', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockSummaryData),
@@ -157,46 +208,247 @@ describe('SpendSummary', () => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
 
-      // Select account
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockTransactionsData),
+      // Expand first account
+      const personalButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
       });
+      fireEvent.click(personalButton);
 
-      const accountButton = screen.getByRole('button', { name: /Personal Checking/i });
-      fireEvent.click(accountButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Amazon')).toBeInTheDocument();
+      // Expand second account
+      const sharedButton = screen.getByRole('button', {
+        name: /Shared Credit Card/i,
       });
+      fireEvent.click(sharedButton);
 
-      // Mock the summary fetch for clearing
+      // Both accounts should be expanded
+      expect(personalButton).toHaveAttribute('aria-expanded', 'true');
+      expect(sharedButton).toHaveAttribute('aria-expanded', 'true');
+
+      // Transactions from both accounts should be visible
+      expect(screen.getByText('Amazon')).toBeInTheDocument();
+      expect(screen.getByText('Restaurant')).toBeInTheDocument();
+    });
+
+    it('shows Shared Source badge for accounts marked as shared source', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockSummaryData),
       });
 
-      // Click clear button
-      const clearButton = screen.getByRole('button', { name: /close|clear|back/i });
-      fireEvent.click(clearButton);
+      render(<SpendSummary />);
 
       await waitFor(() => {
-        // Transactions should no longer be visible
-        expect(screen.queryByText('Amazon')).not.toBeInTheDocument();
+        expect(screen.getByText('Shared Credit Card')).toBeInTheDocument();
       });
 
-      // Both accounts should be visible again
-      expect(screen.getByText('Personal Checking')).toBeInTheDocument();
-      expect(screen.getByText('Shared Credit Card')).toBeInTheDocument();
+      expect(screen.getByText('Shared Source')).toBeInTheDocument();
+    });
+  });
+
+  describe('Category Dropdown', () => {
+    it('shows category dropdown with options from API', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Expand account
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
+      });
+      fireEvent.click(accountButton);
+
+      // Find category dropdown for Amazon transaction
+      const categoryDropdown = screen.getByLabelText(/Category for Amazon/i);
+      expect(categoryDropdown).toBeInTheDocument();
+      expect(categoryDropdown).toHaveValue('Shopping');
+
+      // Verify all category options exist
+      expect(
+        screen.getAllByRole('option', { name: 'Food & Dining' }).length
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByRole('option', { name: 'Shopping' }).length
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByRole('option', { name: 'Gas & Fuel' }).length
+      ).toBeGreaterThan(0);
+    });
+
+    it('triggers update when category is changed', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockSummaryData),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Expand account
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
+      });
+      fireEvent.click(accountButton);
+
+      // Change category for Amazon transaction
+      const categoryDropdown = screen.getByLabelText(/Category for Amazon/i);
+      fireEvent.change(categoryDropdown, { target: { value: 'Food & Dining' } });
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          '/api/transactions/tx-1',
+          expect.objectContaining({
+            method: 'PATCH',
+            body: expect.stringContaining('normalized_category'),
+          })
+        );
+      });
+    });
+  });
+
+  describe('Shared Checkbox', () => {
+    it('shows shared checkbox for each transaction', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockSummaryData),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Expand account
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
+      });
+      fireEvent.click(accountButton);
+
+      // Check shared checkbox for Grocery Store (isShared: true)
+      const groceryCheckbox = screen.getByRole('checkbox', {
+        name: /Mark Grocery Store as shared/i,
+      });
+      expect(groceryCheckbox).toBeChecked();
+
+      // Check shared checkbox for Amazon (isShared: false)
+      const amazonCheckbox = screen.getByRole('checkbox', {
+        name: /Mark Amazon as shared/i,
+      });
+      expect(amazonCheckbox).not.toBeChecked();
+    });
+
+    it('triggers mutation when shared checkbox is clicked', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockSummaryData),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Expand account
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
+      });
+      fireEvent.click(accountButton);
+
+      // Click shared checkbox for Amazon
+      const amazonCheckbox = screen.getByRole('checkbox', {
+        name: /Mark Amazon as shared/i,
+      });
+      fireEvent.click(amazonCheckbox);
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          '/api/transactions/tx-1',
+          expect.objectContaining({
+            method: 'PATCH',
+            body: expect.stringContaining('"is_shared":true'),
+          })
+        );
+      });
+    });
+
+    it('shows optimistic update immediately', async () => {
+      let resolveUpdate: () => void;
+      const updatePromise = new Promise<void>((resolve) => {
+        resolveUpdate = resolve;
+      });
+
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockSummaryData),
+        })
+        .mockReturnValueOnce({
+          ok: true,
+          json: () => updatePromise.then(() => ({ success: true })),
+        });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Expand account
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
+      });
+      fireEvent.click(accountButton);
+
+      // Click shared checkbox for Amazon
+      const amazonCheckbox = screen.getByRole('checkbox', {
+        name: /Mark Amazon as shared/i,
+      });
+
+      // Initial state: not shared
+      expect(amazonCheckbox).not.toBeChecked();
+
+      fireEvent.click(amazonCheckbox);
+
+      // Optimistic update: immediately shows as checked
+      expect(amazonCheckbox).toBeChecked();
+
+      // Resolve the update
+      resolveUpdate!();
     });
   });
 
   describe('Shared Only Filter', () => {
-    it('respects shared-only toggle when viewing transactions', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSummaryData),
-      });
+    it('refetches data with sharedOnly=true when toggle is enabled', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockSummaryData),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockSharedOnlyData),
+        });
 
       render(<SpendSummary />);
 
@@ -205,16 +457,12 @@ describe('SpendSummary', () => {
       });
 
       // Enable shared only
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSharedOnlyData),
+      const sharedOnlyToggle = screen.getByRole('switch', {
+        name: /Toggle shared only/i,
       });
-
-      const sharedToggle = screen.getByRole('switch', { name: /shared/i });
-      fireEvent.click(sharedToggle);
+      fireEvent.click(sharedOnlyToggle);
 
       await waitFor(() => {
-        // Check the fetch was called with sharedOnly=true
         expect(fetchMock).toHaveBeenCalledWith(
           expect.stringContaining('sharedOnly=true')
         );
@@ -223,11 +471,20 @@ describe('SpendSummary', () => {
   });
 
   describe('Period Selector', () => {
-    it('refetches data when period changes while viewing transactions', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockSummaryData),
-      });
+    it('refetches data when period changes', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockSummaryData),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              ...mockSummaryData,
+              period: 'last_30_days',
+            }),
+        });
 
       render(<SpendSummary />);
 
@@ -235,28 +492,7 @@ describe('SpendSummary', () => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
 
-      // Select account first
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockTransactionsData),
-      });
-
-      const accountButton = screen.getByRole('button', { name: /Personal Checking/i });
-      fireEvent.click(accountButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Amazon')).toBeInTheDocument();
-      });
-
       // Change period
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          ...mockTransactionsData,
-          period: 'last_30_days',
-        }),
-      });
-
       const periodSelect = screen.getByRole('combobox');
       fireEvent.change(periodSelect, { target: { value: 'last_30_days' } });
 
@@ -264,19 +500,135 @@ describe('SpendSummary', () => {
         expect(fetchMock).toHaveBeenCalledWith(
           expect.stringContaining('period=last_30_days')
         );
-        // Should still include accountId
-        expect(fetchMock).toHaveBeenCalledWith(
-          expect.stringContaining('accountId=acc-1')
-        );
       });
     });
   });
 
   describe('Loading States', () => {
-    it('shows loading state while fetching transactions', async () => {
+    it('shows loading state while fetching data', async () => {
+      let resolveData: (value: unknown) => void;
+      const dataPromise = new Promise((resolve) => {
+        resolveData = resolve;
+      });
+
+      fetchMock.mockReturnValueOnce({
+        ok: true,
+        json: () => dataPromise,
+      });
+
+      render(<SpendSummary />);
+
+      // Should show loading state
+      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+      // Resolve the promise
+      resolveData!(mockSummaryData);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Loading should be gone
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('shows error state when fetch fails', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({ error: 'Server error' }),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Failed to fetch spend summary')
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('rolls back optimistic update on mutation failure', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockSummaryData),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: () => Promise.resolve({ error: 'Update failed' }),
+        });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Personal Checking')).toBeInTheDocument();
+      });
+
+      // Expand account
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
+      });
+      fireEvent.click(accountButton);
+
+      // Click shared checkbox for Amazon
+      const amazonCheckbox = screen.getByRole('checkbox', {
+        name: /Mark Amazon as shared/i,
+      });
+
+      // Initial state: not shared
+      expect(amazonCheckbox).not.toBeChecked();
+
+      fireEvent.click(amazonCheckbox);
+
+      // Optimistic update: shows as checked
+      expect(amazonCheckbox).toBeChecked();
+
+      // Wait for rollback after failure
+      await waitFor(() => {
+        expect(amazonCheckbox).not.toBeChecked();
+      });
+    });
+  });
+
+  describe('Empty States', () => {
+    it('shows empty state when no accounts/transactions', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockSummaryData),
+        json: () =>
+          Promise.resolve({
+            ...mockSummaryData,
+            totalAmount: 0,
+            accounts: [],
+            categories: [],
+          }),
+      });
+
+      render(<SpendSummary />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('No transactions found for this period.')
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('shows empty transaction message when account has no transactions', async () => {
+      const dataWithEmptyAccount = {
+        ...mockSummaryData,
+        accounts: [
+          {
+            ...mockSummaryData.accounts[0],
+            transactionCount: 0,
+            transactions: [],
+          },
+        ],
+      };
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(dataWithEmptyAccount),
       });
 
       render(<SpendSummary />);
@@ -285,31 +637,15 @@ describe('SpendSummary', () => {
         expect(screen.getByText('Personal Checking')).toBeInTheDocument();
       });
 
-      // Create a delayed promise for transaction fetch
-      let resolveTransactions: (value: unknown) => void;
-      const transactionPromise = new Promise((resolve) => {
-        resolveTransactions = resolve;
+      // Expand account
+      const accountButton = screen.getByRole('button', {
+        name: /Personal Checking/i,
       });
-
-      fetchMock.mockReturnValueOnce({
-        ok: true,
-        json: () => transactionPromise,
-      });
-
-      const accountButton = screen.getByRole('button', { name: /Personal Checking/i });
       fireEvent.click(accountButton);
 
-      // Should show loading state
-      await waitFor(() => {
-        expect(screen.getByText(/loading/i)).toBeInTheDocument();
-      });
-
-      // Resolve the promise
-      resolveTransactions!(mockTransactionsData);
-
-      await waitFor(() => {
-        expect(screen.getByText('Amazon')).toBeInTheDocument();
-      });
+      expect(
+        screen.getByText('No transactions for this account')
+      ).toBeInTheDocument();
     });
   });
 });
