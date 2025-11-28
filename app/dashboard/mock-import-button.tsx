@@ -46,13 +46,13 @@ export default function MockImportButton() {
       <button
         onClick={handleImport}
         disabled={loading}
-        className="rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-medium text-zinc-600 hover:border-zinc-400 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
+        className="rounded-xl border border-dashed border-warm-200 bg-warm-50 px-4 py-2.5 text-sm font-medium text-warm-500 transition-all hover:border-sage-300 hover:bg-sage-50 hover:text-sage-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-warm-600 dark:bg-warm-800 dark:text-warm-400 dark:hover:border-sage-600 dark:hover:bg-warm-700"
       >
         {loading ? 'Importing...' : 'Import Mock Data'}
       </button>
 
       {result && (
-        <span className="text-sm text-green-600 dark:text-green-400">
+        <span className="text-sm text-moss-500 dark:text-sage-400">
           +{result.accountsCreated} accounts, +{result.transactionsCreated} transactions
           {result.transactionsSkipped > 0 && ` (${result.transactionsSkipped} skipped)`}
         </span>

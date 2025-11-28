@@ -214,13 +214,13 @@ export default function SpendSummary() {
         {/* Left side - Period Selector and Date Range */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="text-sm font-medium text-warm-600 dark:text-warm-300">
               Period:
             </label>
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value as Period)}
-              className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+              className="rounded-xl border border-warm-100 bg-white px-3 py-1.5 text-sm text-warm-800 shadow-sm focus:border-sage-500 focus:outline-none focus:ring-1 focus:ring-sage-500 dark:border-warm-600 dark:bg-warm-800 dark:text-warm-100"
             >
               <option value="current_month">Current Month</option>
               <option value="last_30_days">Last 30 Days</option>
@@ -229,7 +229,7 @@ export default function SpendSummary() {
 
           {/* Date Range Display */}
           {data && (
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">
+            <span className="text-sm text-warm-500 dark:text-warm-400">
               {formatDateRange()}
             </span>
           )}
@@ -237,7 +237,7 @@ export default function SpendSummary() {
 
         {/* Right side - Shared Only Toggle */}
         <label className="flex cursor-pointer items-center gap-2">
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <span className="text-sm font-medium text-warm-600 dark:text-warm-300">
             Shared Only:
           </span>
           <button
@@ -246,12 +246,12 @@ export default function SpendSummary() {
             aria-checked={sharedOnly}
             aria-label="Toggle shared only"
             onClick={() => setSharedOnly(!sharedOnly)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-              sharedOnly ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-600'
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 ${
+              sharedOnly ? 'bg-sage-500' : 'bg-warm-200 dark:bg-warm-600'
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
                 sharedOnly ? 'translate-x-6' : 'translate-x-1'
               }`}
             />
@@ -262,14 +262,14 @@ export default function SpendSummary() {
 
       {/* Loading State */}
       {loading && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="text-zinc-600 dark:text-zinc-400">Loading spend summary...</p>
+        <div className="rounded-2xl border border-warm-100 bg-white p-8 text-center shadow-sm dark:border-warm-700 dark:bg-warm-800">
+          <p className="text-warm-500 dark:text-warm-400">Loading spend summary...</p>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+        <div className="rounded-2xl border border-coral-100 bg-coral-50 p-4 text-coral-600 dark:border-coral-500/30 dark:bg-coral-500/10 dark:text-coral-500">
           {error}
         </div>
       )}
@@ -278,14 +278,14 @@ export default function SpendSummary() {
       {!loading && !error && data && (
         <div className="space-y-6">
           {/* Total Spend Card */}
-          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          <div className="rounded-2xl border border-warm-100 bg-white p-6 shadow-sm dark:border-warm-700 dark:bg-warm-800">
+            <p className="text-sm font-medium text-warm-500 dark:text-warm-400">
               Total Spend {sharedOnly && '(Shared)'}
             </p>
-            <p className="mt-1 text-3xl font-bold text-black dark:text-white">
+            <p className="mt-1 text-3xl font-bold tracking-tight text-warm-800 dark:text-warm-50">
               {formatCurrency(data.totalAmount)}
             </p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-sm text-warm-500 dark:text-warm-400">
               {data.accounts.reduce((sum, acc) => sum + acc.transactionCount, 0)} transactions
               {` across ${data.accounts.length} account${data.accounts.length !== 1 ? 's' : ''}`}
             </p>
@@ -296,12 +296,12 @@ export default function SpendSummary() {
               if (categoryRollups.length === 0) return null;
 
               return (
-                <div className="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                <div className="mt-4 border-t border-warm-100 pt-3 dark:border-warm-700">
                   <button
                     type="button"
                     onClick={() => setCategoryRollupExpanded(!categoryRollupExpanded)}
                     aria-expanded={categoryRollupExpanded}
-                    className="flex w-full items-center justify-between text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                    className="flex w-full items-center justify-between text-xs text-warm-500 hover:text-warm-700 dark:text-warm-400 dark:hover:text-warm-300"
                   >
                     <span className="font-medium">
                       {categoryRollups.length} categor{categoryRollups.length !== 1 ? 'ies' : 'y'}
@@ -333,15 +333,15 @@ export default function SpendSummary() {
                           <div className="flex items-center gap-2">
                             <span
                               data-testid="category-name"
-                              className="font-medium text-zinc-700 dark:text-zinc-300"
+                              className="font-medium text-warm-700 dark:text-warm-200"
                             >
                               {rollup.category}
                             </span>
-                            <span className="text-zinc-400 dark:text-zinc-500">
+                            <span className="text-warm-400 dark:text-warm-500">
                               {rollup.transactionCount} transaction{rollup.transactionCount !== 1 ? 's' : ''}
                             </span>
                           </div>
-                          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                          <span className="font-medium text-warm-800 dark:text-warm-100">
                             {formatCurrency(rollup.totalAmount)}
                           </span>
                         </div>
@@ -355,16 +355,16 @@ export default function SpendSummary() {
 
           {/* Account Accordion */}
           {data.accounts.length > 0 && (
-            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800">
-                <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <div className="overflow-hidden rounded-2xl border border-warm-100 bg-white shadow-sm dark:border-warm-700 dark:bg-warm-800">
+              <div className="border-b border-warm-100 bg-warm-50 px-4 py-3 dark:border-warm-700 dark:bg-warm-700/50">
+                <h3 className="text-sm font-medium text-warm-700 dark:text-warm-200">
                   Spend by Account
                 </h3>
-                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-0.5 text-xs text-warm-500 dark:text-warm-400">
                   Click an account to view and edit transactions
                 </p>
               </div>
-              <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <div className="divide-y divide-warm-100 dark:divide-warm-700">
                 {data.accounts
                   .sort((a, b) => b.totalAmount - a.totalAmount)
                   .map((account) => {
@@ -376,31 +376,31 @@ export default function SpendSummary() {
                         <button
                           onClick={() => toggleAccountExpanded(account.accountId)}
                           aria-expanded={isExpanded}
-                          className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-zinc-50 focus:bg-zinc-50 focus:outline-none dark:hover:bg-zinc-800 dark:focus:bg-zinc-800"
+                          className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-warm-50 focus:bg-warm-50 focus:outline-none dark:hover:bg-warm-700/50 dark:focus:bg-warm-700/50"
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-black dark:text-white">
+                              <p className="font-medium text-warm-800 dark:text-warm-100">
                                 {account.accountName}
                               </p>
                               {account.isSharedSource && (
-                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                <span className="rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700 dark:bg-sage-800/50 dark:text-sage-300">
                                   Shared Source
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                            <p className="text-sm text-warm-500 dark:text-warm-400">
                               {account.type || 'Unknown'} • {account.subtype || 'N/A'} •{' '}
                               {account.transactionCount} transaction
                               {account.transactionCount !== 1 ? 's' : ''}
                             </p>
                           </div>
                           <div className="ml-4 flex items-center gap-3">
-                            <p className="text-lg font-semibold text-black dark:text-white">
+                            <p className="text-lg font-semibold text-warm-800 dark:text-warm-100">
                               {formatCurrency(account.totalAmount)}
                             </p>
                             <svg
-                              className={`h-5 w-5 text-zinc-400 transition-transform ${
+                              className={`h-5 w-5 text-warm-400 transition-transform ${
                                 isExpanded ? 'rotate-90' : ''
                               }`}
                               fill="none"
@@ -419,13 +419,13 @@ export default function SpendSummary() {
 
                         {/* Expanded Transaction List */}
                         {isExpanded && (
-                          <div className="border-t border-zinc-100 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/50">
+                          <div className="border-t border-warm-100 bg-warm-50/50 dark:border-warm-700 dark:bg-warm-800/50">
                             {account.transactions.length === 0 ? (
-                              <p className="px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                              <p className="px-4 py-6 text-center text-sm text-warm-500 dark:text-warm-400">
                                 No transactions for this account
                               </p>
                             ) : (
-                              <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                              <div className="divide-y divide-warm-100 dark:divide-warm-700">
                                 {account.transactions
                                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                                   .map((tx) => {
@@ -440,10 +440,10 @@ export default function SpendSummary() {
                                       >
                                         {/* Transaction Info */}
                                         <div className="min-w-0 flex-1">
-                                          <p className="font-medium text-black dark:text-white">
+                                          <p className="font-medium text-warm-800 dark:text-warm-100">
                                             {tx.description}
                                           </p>
-                                          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                          <p className="text-sm text-warm-500 dark:text-warm-400">
                                             {formatDate(tx.date)}
                                           </p>
                                         </div>
@@ -460,7 +460,7 @@ export default function SpendSummary() {
                                             }
                                             disabled={isUpdating}
                                             aria-label={`Category for ${tx.description}`}
-                                            className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+                                            className="rounded-lg border border-warm-200 bg-white px-2 py-1 text-sm text-warm-800 focus:border-sage-500 focus:outline-none focus:ring-1 focus:ring-sage-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-warm-600 dark:bg-warm-700 dark:text-warm-100"
                                           >
                                             <option value="">No category</option>
                                             {data.categories.map((cat) => (
@@ -482,15 +482,15 @@ export default function SpendSummary() {
                                                   isShared: !tx.isShared,
                                                 })
                                               }
-                                              className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800"
+                                              className="h-4 w-4 cursor-pointer rounded border-warm-300 text-sage-500 focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-warm-600 dark:bg-warm-700"
                                             />
-                                            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                                            <span className="text-xs text-warm-500 dark:text-warm-400">
                                               Shared
                                             </span>
                                           </label>
 
                                           {/* Amount */}
-                                          <p className="min-w-[80px] text-right text-lg font-semibold text-black dark:text-white">
+                                          <p className="min-w-[80px] text-right text-lg font-semibold text-warm-800 dark:text-warm-100">
                                             {formatCurrency(tx.amount)}
                                           </p>
                                         </div>
@@ -510,8 +510,8 @@ export default function SpendSummary() {
 
           {/* Empty State (no accounts) */}
           {data.accounts.length === 0 && (
-            <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
-              <p className="text-zinc-600 dark:text-zinc-400">
+            <div className="rounded-2xl border border-warm-100 bg-white p-8 text-center shadow-sm dark:border-warm-700 dark:bg-warm-800">
+              <p className="text-warm-500 dark:text-warm-400">
                 No transactions found for this period.
               </p>
             </div>

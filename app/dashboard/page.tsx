@@ -16,27 +16,27 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-8 dark:bg-black">
+    <div className="min-h-screen bg-cream-50 p-8 dark:bg-warm-900">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-black dark:text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-warm-800 dark:text-warm-50">
             Hello!
           </h1>
           <LogoutButton />
         </div>
 
         {/* Navigation */}
-        <div className="mb-8 flex flex-wrap items-center gap-4">
+        <div className="mb-8 flex flex-wrap items-center gap-3">
           <a
             href="/accounts"
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-black hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
+            className="rounded-xl border border-warm-100 bg-white px-4 py-2.5 text-sm font-medium text-warm-700 shadow-sm transition-all hover:border-sage-200 hover:bg-sage-50 hover:shadow dark:border-warm-700 dark:bg-warm-800 dark:text-warm-100 dark:hover:border-sage-700 dark:hover:bg-warm-700"
           >
             Manage Accounts
           </a>
           <a
             href="/shared"
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-black hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
+            className="rounded-xl border border-warm-100 bg-white px-4 py-2.5 text-sm font-medium text-warm-700 shadow-sm transition-all hover:border-sage-200 hover:bg-sage-50 hover:shadow dark:border-warm-700 dark:bg-warm-800 dark:text-warm-100 dark:hover:border-sage-700 dark:hover:bg-warm-700"
           >
             Shared Transactions
           </a>

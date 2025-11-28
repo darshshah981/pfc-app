@@ -45,48 +45,48 @@ export default function AccountsTable({ accounts }: AccountsTableProps) {
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="overflow-hidden rounded-2xl border border-warm-100 bg-white shadow-sm dark:border-warm-700 dark:bg-warm-800">
       <table className="w-full">
-        <thead className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800">
+        <thead className="border-b border-warm-100 bg-warm-50 dark:border-warm-700 dark:bg-warm-700/50">
           <tr>
-            <th className="px-4 py-3 text-left text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <th className="px-4 py-3 text-left text-sm font-medium text-warm-700 dark:text-warm-200">
               Account Name
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <th className="px-4 py-3 text-left text-sm font-medium text-warm-700 dark:text-warm-200">
               Type
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <th className="px-4 py-3 text-left text-sm font-medium text-warm-700 dark:text-warm-200">
               Subtype
             </th>
-            <th className="px-4 py-3 text-center text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <th className="px-4 py-3 text-center text-sm font-medium text-warm-700 dark:text-warm-200">
               Shared Source
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+        <tbody className="divide-y divide-warm-100 dark:divide-warm-700">
           {accounts.map((account) => (
-            <tr key={account.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-              <td className="px-4 py-3 text-sm text-black dark:text-white">
+            <tr key={account.id} className="transition-colors hover:bg-warm-50 dark:hover:bg-warm-700/30">
+              <td className="px-4 py-3 text-sm font-medium text-warm-800 dark:text-warm-100">
                 {account.name}
               </td>
-              <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
+              <td className="px-4 py-3 text-sm text-warm-500 dark:text-warm-400">
                 {account.type || '-'}
               </td>
-              <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
+              <td className="px-4 py-3 text-sm text-warm-500 dark:text-warm-400">
                 {account.subtype || '-'}
               </td>
               <td className="px-4 py-3 text-center">
                 <button
                   onClick={() => toggleSharedSource(account.id, account.is_shared_source)}
                   disabled={loading === account.id}
-                  className={`inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 ${
+                  className={`inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 disabled:opacity-50 ${
                     account.is_shared_source
-                      ? 'bg-blue-600'
-                      : 'bg-zinc-300 dark:bg-zinc-600'
+                      ? 'bg-sage-500'
+                      : 'bg-warm-200 dark:bg-warm-600'
                   }`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
                       account.is_shared_source ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />

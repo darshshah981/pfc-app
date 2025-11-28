@@ -21,20 +21,20 @@ export default async function AccountsPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-        <div className="text-red-600">Error loading accounts: {error.message}</div>
+      <div className="flex min-h-screen items-center justify-center bg-cream-50 dark:bg-warm-900">
+        <div className="text-coral-500">Error loading accounts: {error.message}</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-8 dark:bg-black">
+    <div className="min-h-screen bg-cream-50 p-8 dark:bg-warm-900">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-black dark:text-white">Accounts</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-warm-800 dark:text-warm-50">Accounts</h1>
           <a
             href="/dashboard"
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm font-medium text-sage-600 transition-colors hover:text-sage-700 dark:text-sage-400 dark:hover:text-sage-300"
           >
             Back to Dashboard
           </a>
@@ -43,8 +43,8 @@ export default async function AccountsPage() {
         {accounts && accounts.length > 0 ? (
           <AccountsTable accounts={accounts} />
         ) : (
-          <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900">
-            <p className="text-zinc-600 dark:text-zinc-400">
+          <div className="rounded-2xl border border-warm-100 bg-white p-8 text-center shadow-sm dark:border-warm-700 dark:bg-warm-800">
+            <p className="text-warm-500 dark:text-warm-400">
               No accounts found. Add accounts to get started.
             </p>
           </div>

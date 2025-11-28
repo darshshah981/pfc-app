@@ -39,9 +39,9 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <div className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="mb-6 text-2xl font-bold text-black dark:text-white">
+    <div className="flex min-h-screen items-center justify-center bg-cream-50 dark:bg-warm-900">
+      <div className="w-full max-w-md rounded-2xl border border-warm-100 bg-white p-8 shadow-sm dark:border-warm-700 dark:bg-warm-800">
+        <h1 className="mb-6 text-2xl font-bold tracking-tight text-warm-800 dark:text-warm-50">
           Sign Up
         </h1>
 
@@ -49,7 +49,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="fullName"
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              className="block text-sm font-medium text-warm-700 dark:text-warm-300"
             >
               Full Name
             </label>
@@ -58,7 +58,7 @@ export default function SignupPage() {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+              className="mt-1 block w-full rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-warm-800 shadow-sm transition-colors focus:border-sage-500 focus:outline-none focus:ring-1 focus:ring-sage-500 dark:border-warm-600 dark:bg-warm-700 dark:text-warm-100"
               placeholder="John Doe"
             />
           </div>
@@ -66,7 +66,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              className="block text-sm font-medium text-warm-700 dark:text-warm-300"
             >
               Email
             </label>
@@ -76,7 +76,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+              className="mt-1 block w-full rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-warm-800 shadow-sm transition-colors focus:border-sage-500 focus:outline-none focus:ring-1 focus:ring-sage-500 dark:border-warm-600 dark:bg-warm-700 dark:text-warm-100"
               placeholder="you@example.com"
             />
           </div>
@@ -84,7 +84,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              className="block text-sm font-medium text-warm-700 dark:text-warm-300"
             >
               Password
             </label>
@@ -95,13 +95,13 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+              className="mt-1 block w-full rounded-xl border border-warm-200 bg-white px-3 py-2.5 text-warm-800 shadow-sm transition-colors focus:border-sage-500 focus:outline-none focus:ring-1 focus:ring-sage-500 dark:border-warm-600 dark:bg-warm-700 dark:text-warm-100"
               placeholder="Min. 6 characters"
             />
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+            <div className="rounded-xl bg-coral-50 p-3 text-sm text-coral-600 dark:bg-coral-500/10 dark:text-coral-500">
               {error}
             </div>
           )}
@@ -109,15 +109,15 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-sage-500 px-4 py-2.5 font-medium text-white shadow-sm transition-all hover:bg-sage-600 hover:shadow focus:outline-none focus:ring-2 focus:ring-sage-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? 'Signing up...' : 'Sign Up'}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-4 text-center text-sm text-warm-500 dark:text-warm-400">
           Already have an account?{' '}
-          <a href="/auth/login" className="text-blue-600 hover:underline">
+          <a href="/auth/login" className="font-medium text-sage-600 transition-colors hover:text-sage-700 dark:text-sage-400 dark:hover:text-sage-300">
             Log in
           </a>
         </p>
