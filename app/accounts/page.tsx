@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import AccountsTable from './accounts-table';
+import PlaidActions from './plaid-actions';
 
 export default async function AccountsPage() {
   const supabase = await createClient();
@@ -18,6 +19,15 @@ export default async function AccountsPage() {
     .select('id, name, type, subtype, is_shared_source, provider_account_id, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  // Check if user has any Plaid items (connected accounts)
+  const { data: plaidItems } = await supabase
+    .from('plaid_items')
+    .select('id')
+    .eq('user_id', user.id);
+
+  const connectedCount = plaidItems?.length ?? 0;
+  const isConnected = connectedCount > 0;
 
   if (error) {
     return (
@@ -39,6 +49,9 @@ export default async function AccountsPage() {
             Back to Dashboard
           </a>
         </div>
+
+        {/* Plaid Actions */}
+        <PlaidActions isConnected={isConnected} connectedCount={connectedCount} />
 
         {accounts && accounts.length > 0 ? (
           <AccountsTable accounts={accounts} />
