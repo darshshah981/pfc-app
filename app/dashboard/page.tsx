@@ -21,7 +21,7 @@ export default async function DashboardPage() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight text-warm-800 dark:text-warm-50">
-            Hello!
+            Dashboard
           </h1>
           <LogoutButton />
         </div>
@@ -33,12 +33,6 @@ export default async function DashboardPage() {
             className="rounded-xl border border-warm-100 bg-white px-4 py-2.5 text-sm font-medium text-warm-700 shadow-sm transition-all hover:border-sage-200 hover:bg-sage-50 hover:shadow dark:border-warm-700 dark:bg-warm-800 dark:text-warm-100 dark:hover:border-sage-700 dark:hover:bg-warm-700"
           >
             Manage Accounts
-          </a>
-          <a
-            href="/shared"
-            className="rounded-xl border border-warm-100 bg-white px-4 py-2.5 text-sm font-medium text-warm-700 shadow-sm transition-all hover:border-sage-200 hover:bg-sage-50 hover:shadow dark:border-warm-700 dark:bg-warm-800 dark:text-warm-100 dark:hover:border-sage-700 dark:hover:bg-warm-700"
-          >
-            Shared Transactions
           </a>
           <MockImportButton />
         </div>
