@@ -46,6 +46,14 @@ function getDateRanges() {
   };
 }
 
+// Format date as YYYY-MM-DD to avoid timezone issues
+function formatDateForResponse(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function formatDateForQuery(date: Date): string {
   return date.toISOString().split('T')[0];
 }
@@ -147,10 +155,10 @@ export async function GET() {
 
   const response: BudgetOverviewResponse = {
     categories,
-    currentMonthStart: monthStart.toISOString(),
-    currentMonthEnd: monthEnd.toISOString(),
-    currentWeekStart: weekStart.toISOString(),
-    currentWeekEnd: weekEnd.toISOString(),
+    currentMonthStart: formatDateForResponse(monthStart),
+    currentMonthEnd: formatDateForResponse(monthEnd),
+    currentWeekStart: formatDateForResponse(weekStart),
+    currentWeekEnd: formatDateForResponse(weekEnd),
   };
 
   return NextResponse.json(response);

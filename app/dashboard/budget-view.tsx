@@ -179,8 +179,10 @@ export default function BudgetView() {
   const formatDateRange = (): string => {
     if (!data) return '';
 
-    const formatDate = (isoString: string): string => {
-      const d = new Date(isoString);
+    // Parse YYYY-MM-DD format and display in local timezone
+    const formatDate = (dateString: string): string => {
+      const [year, month, day] = dateString.split('-').map(Number);
+      const d = new Date(year, month - 1, day);
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
@@ -195,9 +197,16 @@ export default function BudgetView() {
   const getDaysRemaining = (): number => {
     if (!data) return 0;
     const now = new Date();
+
+    // Parse YYYY-MM-DD format
+    const parseDateString = (dateString: string): Date => {
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     const endDate = viewMode === 'monthly'
-      ? new Date(data.currentMonthEnd)
-      : new Date(data.currentWeekEnd);
+      ? parseDateString(data.currentMonthEnd)
+      : parseDateString(data.currentWeekEnd);
     const diffTime = endDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);

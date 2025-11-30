@@ -74,8 +74,10 @@ export default function CategoryDrawer({
     }).format(amount);
   };
 
-  const formatDate = (isoString: string): string => {
-    const d = new Date(isoString);
+  // Parse YYYY-MM-DD format and display in local timezone
+  const formatDate = (dateString: string): string => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const d = new Date(year, month - 1, day);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
