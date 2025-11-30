@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import LogoutButton from './logout-button';
 import MockImportButton from './mock-import-button';
 import SpendSummary from './spend-summary';
+import DashboardTabs from './dashboard-tabs';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -37,8 +38,8 @@ export default async function DashboardPage() {
           <MockImportButton />
         </div>
 
-        {/* Spend Summary Section */}
-        <SpendSummary />
+        {/* Tabbed Content */}
+        <DashboardTabs spendAnalysisContent={<SpendSummary />} />
       </div>
     </div>
   );
